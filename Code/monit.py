@@ -1,67 +1,85 @@
-Un programme monit.py qui monitore certaines ressources de la machine et peut effectuer des rapports au format JSON.
-Autrement dit, le programme check la valeur de certains trucs (genre combien de RAM il reste de dispo ?) et les enregistre. Il est ensuite possible d'appeler le programme en ligne de commande pour obtenir le résultat des derniers checks.
-➜ Utilisation du programme monit.py
+import json
+import os
+import psutil
+import logging
+from datetime import datetime
+from typing import Dict
 
-toutes les actions doivent générer au moins une ligne de logs indiquant que la commande a été appelée
+LOG_DIR = '/var/log/nom_du_programme/'
+DATA_DIR = '/var/monit/'
 
-monit.py check
+# Assurez-vous que les répertoires existent
+for directory in [LOG_DIR, DATA_DIR]:
+    if not os.path.exists(directory):
+        os.makedirs(directory)
 
-il check la valeur de certaines ressources du système
-il enregistre ces données dans un fichier dédié
+# Configurer le logger
+logging.basicConfig(filename=os.path.join(LOG_DIR, 'monit.log'), level=logging.INFO)
 
-🚩 cette commande doit être appelée dans le service backup.service
+def log_command(command):
+    logging.info(f"Command '{command}' called at {datetime.now()}")
 
+def save_report(report: Dict):
+    report_file = os.path.join(DATA_DIR, f'report_{report["id"]}.json')
+    with open(report_file, 'w') as file:
+        json.dump(report, file)
 
+def check():
+    log_command('monit.py check')
 
+    # Exemple de collecte de données
+    ram_usage = psutil.virtual_memory().percent
+    disk_usage = psutil.disk_usage('/').percent
+    cpu_usage = psutil.cpu_percent()
 
-monit.py list
+    # Vérifier les ports TCP
+    tcp_ports = config.get('tcp_ports', [])
+    open_ports = [port for port in tcp_ports if is_port_open(port)]
 
-il affiche la liste des rapports qui ont été effectués
+    # Enregistrer le rapport
+    report = {
+        'id': str(datetime.now().timestamp()),
+        'date': str(datetime.now()),
+        'ram_usage': ram_usage,
+        'disk_usage': disk_usage,
+        'cpu_usage': cpu_usage,
+        'open_ports': open_ports
+    }
 
+    save_report(report)
 
+def list_reports():
+    log_command('monit.py list')
 
-monit.py get last
+    # Afficher la liste des rapports
+    reports = [file for file in os.listdir(DATA_DIR) if file.startswith('report_')]
+    print("List of reports:")
+    for report_file in reports:
+        print(report_file)
 
-il sort le dernier rapport
+def get_last_report():
+    log_command('monit.py get last')
 
+    # Obtenir le dernier rapport
+    reports = [file for file in os.listdir(DATA_DIR) if file.startswith('report_')]
+    if reports:
+        last_report_file = max(reports)
+        with open(os.path.join(DATA_DIR, last_report_file), 'r') as file:
+            last_report = json.load(file)
+            print("Last report:")
+            print(json.dumps(last_report, indent=2))
+    else:
+        print("No reports available.")
 
+# Ajoutez d'autres fonctions comme get_avg, etc.
 
-monit.py get avg X
+def is_port_open(port):
+    # Logique pour vérifier si le port est ouvert
+    # Vous devez implémenter cette fonction en fonction de vos besoins.
+    return True
 
-il calcule les valeurs moyennes des X dernières heures
-
-
-
-➜ Ce que votre programme doit surveiller
-
-RAM
-utilisation disque
-activité du CPU
-est-ce que certains ports sont ouverts et dispos en TCP
-
-➜ Le fichier de conf
-
-on précise la liste des ports TCP à surveiller
-si la connexion TCP fonctionne, c'est que le port est actif, on retourne True
-sinon False
-
-➜ Enregistrer les données
-
-vous enregistrerez les rapports dans le path standard pour les données des applications sous les OS Linux : /var/
-
-il faut un sous-dossier monit
-
-s'il n'existe pas, votre programme le crée au premier lancement
-
-
-un fichier pour chaque rapport généré avec monit.py check
-
-
-➜ Contenu d'un rapport
-
-format JSON
-contenu
-
-l'heure et la date où le check a été effectué, dans un format standard
-un ID unique pour chaque check
-toutes les valeurs récoltées (RAM, etc)
+if __name__ == "__main__":
+    # Exemple d'utilisation des fonctions
+    check()
+    list_reports()
+    get_last_report()
