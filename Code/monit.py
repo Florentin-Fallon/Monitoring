@@ -5,13 +5,21 @@ import logging
 from datetime import datetime
 from typing import Dict
 
-LOG_DIR = '/var/log/nom_du_programme/'
-DATA_DIR = '/var/monit/'
+# Remplacez "moniteur_de_ressources" par le nom réel de votre programme
+Monitoring = "moniteur_de_ressources"
+
+# Répertoires dans le répertoire personnel de l'utilisateur
+LOG_DIR = f'~/{Monitoring}/var/log/'
+DATA_DIR = f'~/{Monitoring}/var/monit/'
 
 # Assurez-vous que les répertoires existent
 for directory in [LOG_DIR, DATA_DIR]:
     if not os.path.exists(directory):
         os.makedirs(directory)
+
+# Définir le chemin complet des répertoires
+LOG_DIR = os.path.expanduser(LOG_DIR)
+DATA_DIR = os.path.expanduser(DATA_DIR)
 
 # Configurer le logger
 logging.basicConfig(filename=os.path.join(LOG_DIR, 'monit.log'), level=logging.INFO)
