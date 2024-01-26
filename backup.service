@@ -1,0 +1,18 @@
+# /etc/systemd/system/backup.service
+
+[Unit]
+Description=Monit Backup Service
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /home/florentinfallon/bin/monit.py check
+WorkingDirectory=/home/florentinfallon
+StandardOutput=journal+console
+Restart=always
+RestartSec=60
+
+ExecStartPost=/bin/sh -c "/usr/bin/python3 /home/florentinfallon/bin/monit.py check >> '/var/monit/monit_report.json' 2>&1"
+
+[Install]
+WantedBy=multi-user.target
